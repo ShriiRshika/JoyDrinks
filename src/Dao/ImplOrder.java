@@ -1,11 +1,19 @@
 package Dao;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import java.sql.Date;
 
 import Dao.DbConnection;
@@ -15,8 +23,8 @@ import Model.Record;
 
 public class ImplOrder implements OrderDao {
 	private List<Order> orders = null;
-	private List<Record> records = null;
-
+	//private List<Record> records = null;
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
@@ -25,7 +33,7 @@ public class ImplOrder implements OrderDao {
 	public ImplOrder() {
 		super();
 		orders = new ArrayList();
-		records = new ArrayList();
+		//records = new ArrayList();
 	}
 
 	@Override
@@ -79,34 +87,42 @@ public class ImplOrder implements OrderDao {
 	public List<Order> queryAllOrders() {
 	
 		Connection conn = DbConnection.getDB();
-		String SQL = "SELECT * FROM jorder";
+		
 		Order order = null;
 		Record record = null;
 			
-		PreparedStatement ps;
 		try {
-			ps = conn.prepareStatement(SQL);
-			ResultSet rs = ps.executeQuery();
-			while(rs.next()) {
+			
+			String SQLo = "SELECT * FROM jorder ORDER BY date,order_num";
+			PreparedStatement psO = conn.prepareStatement(SQLo);
+			ResultSet rsOrder = psO.executeQuery();
+			while(rsOrder.next()) {
 				order = new Order();
-				order.setOrderNumber(rs.getInt("order_num"));
-				order.setDate(rs.getDate("date").getTime());
-				order.setCashier(rs.getString("cashier"));
-				order.setMember(rs.getBoolean("member"));
-				order.setTotal(rs.getInt("total"));
-							
-				SQL="SELECT * FROM jrecord";
-				ps = conn.prepareStatement(SQL);
-				rs = ps.executeQuery();
-				while(rs.next()) {
+				order.setId(rsOrder.getInt("id"));
+				order.setOrderNumber(rsOrder.getInt("order_num"));
+				order.setDate(rsOrder.getDate("date").getTime());
+				order.setCashier(rsOrder.getString("cashier"));
+				order.setMember(rsOrder.getBoolean("member"));
+				order.setTotal(rsOrder.getInt("total"));
+											
+				List<Record> records = new ArrayList();
+				System.out.println("order.getId()="+order.getId());
+				String SQLr="SELECT * FROM jrecord WHERE order_id=?";
+				PreparedStatement psR = conn.prepareStatement(SQLr);
+				psR.setInt(1, order.getId());
+				ResultSet rsRecord = psR.executeQuery();
+				while(rsRecord.next()) {
 					record = new Record();
-					record.setRecordNumber(rs.getInt("record_num"));
-					record.setName(rs.getString("name"));
-					record.setCapacity(rs.getString("capacity"));
-					record.setPrice(rs.getInt("price"));
-					record.setSugar(rs.getString("sugar"));
-					record.setIce(rs.getString("ice"));
-					record.setQuantity(rs.getInt("quantity"));
+					record.setRecordNumber(rsRecord.getInt("record_num"));
+					record.setName(rsRecord.getString("name"));
+					record.setCapacity(rsRecord.getString("capacity"));
+					
+					record.setPrice(rsRecord.getInt("price"));
+					System.out.println("record.price = "+record.getPrice());
+					record.setSugar(rsRecord.getString("sugar"));
+					System.out.println("record sugar = "+record.getSugar());
+					record.setIce(rsRecord.getString("ice"));
+					record.setQuantity(rsRecord.getInt("quantity"));
 					records.add(record);
 				}
 				order.setRecords(records);
